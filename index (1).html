@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spinny IMS — Interview Management</title>
+<style>
+:root{
+  --pink:#D6336C; --pink-dark:#A61E4D; --pink-soft:#FFF0F5;
+  --ink:#1E1B22; --muted:#6E6878; --line:#E8E4EC;
+  --bg:#FAF8FB; --card:#FFFFFF;
+  --green:#2B8A3E; --green-soft:#EBFBEE;
+  --red:#C92A2A; --red-soft:#FFF5F5;
+  --amber:#E67700; --amber-soft:#FFF9DB;
+  --blue:#1971C2; --blue-soft:#E7F5FF;
+  --radius:12px;
+  font-size:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:15px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px rgba(214,51,108,.12)}
+label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+.field{margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:8px;border:1px solid transparent;font-size:15px;font-weight:600;transition:.15s}
+.btn-primary{background:var(--pink);color:#fff}
+.btn-primary:hover{background:var(--pink-dark)}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--pink);color:var(--pink)}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ---------- Login ---------- */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(160deg,#FFF0F5 0%,#FAF8FB 60%)}
+.login-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:38px 34px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(214,51,108,.08)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--pink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px}
+.brand h1{font-size:21px;font-weight:700}
+.login-sub{color:var(--muted);font-size:14px;margin-bottom:26px}
+.err{background:var(--red-soft);color:var(--red);border-radius:8px;padding:9px 12px;font-size:13.5px;margin-bottom:14px;display:none}
+.demo-note{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
+.demo-note code{background:var(--bg);padding:1px 6px;border-radius:5px;font-size:12px}
+
+/* ---------- App shell ---------- */
+#app{display:none;min-height:100vh}
+header.topbar{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;height:60px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+.topbar .brand-mark{width:32px;height:32px;font-size:16px;border-radius:8px}
+.topbar h1{font-size:17px}
+.topbar .spacer{flex:1}
+.userchip{display:flex;align-items:center;gap:10px;font-size:13.5px}
+.userchip .avatar{width:34px;height:34px;border-radius:50%;background:var(--pink-soft);color:var(--pink-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.userchip .role{color:var(--muted);font-size:12px}
+nav.tabs{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{background:none;border:none;padding:13px 16px;font-size:14.5px;font-weight:600;color:var(--muted);border-bottom:2.5px solid transparent;white-space:nowrap}
+nav.tabs button.active{color:var(--pink);border-bottom-color:var(--pink)}
+main{max-width:1180px;margin:0 auto;padding:26px 22px 80px}
+
+/* ---------- Components ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:26px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.stat .num{font-size:27px;font-weight:700}
+.stat .lbl{font-size:12.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:18px}
+.card h2{font-size:17px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 18px}
+@media(max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:9px 10px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.table-wrap{overflow-x:auto}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-gray{background:var(--bg);color:var(--muted)}
+.b-blue{background:var(--blue-soft);color:var(--blue)}
+.b-amber{background:var(--amber-soft);color:var(--amber)}
+.b-green{background:var(--green-soft);color:var(--green)}
+.b-red{background:var(--red-soft);color:var(--red)}
+.b-pink{background:var(--pink-soft);color:var(--pink-dark)}
+.empty{text-align:center;color:var(--muted);padding:34px 10px;font-size:14.5px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.toolbar input{max-width:280px}
+.score-row{display:grid;grid-template-columns:1fr 110px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line)}
+.score-row:last-of-type{border-bottom:none}
+.score-row span{font-size:14.5px}
+.score-row input{text-align:center;font-weight:700}
+.total-bar{display:flex;justify-content:space-between;align-items:center;background:var(--pink-soft);border-radius:8px;padding:12px 16px;margin:14px 0;font-weight:700}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;padding:11px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-weight:700;font-size:15px}
+.seg button.sel-pass{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+.seg button.sel-fail{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+
+/* ---------- Modal ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(30,27,34,.45);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:30px 16px;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;padding:26px 26px 22px;position:relative;margin:auto 0}
+.modal h2{font-size:18px;margin-bottom:18px}
+.modal .x{position:absolute;top:16px;right:16px;background:none;border:none;font-size:21px;color:var(--muted);line-height:1}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+
+/* ---------- Toast ---------- */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:99px;font-size:14px;font-weight:600;transition:.3s;z-index:200;opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ---------- Pipeline ---------- */
+.pipe{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.pipe .dot{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.pipe .dot.on{background:var(--pink)}
+.loading{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.muted-sm{font-size:12.5px;color:var(--muted)}
+.detail-grid{display:grid;grid-template-columns:140px 1fr;gap:7px 14px;font-size:14px}
+.detail-grid dt{color:var(--muted);font-weight:600;font-size:13px}
+@media(max-width:560px){.detail-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <h1>Spinny IMS</h1>
+    </div>
+    <p class="login-sub">Interview Management System — Supply Evaluator hiring</p>
+    <div class="err" id="loginErr"></div>
+    <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@company.com" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" id="loginBtn" onclick="doLogin()">Sign in</button>
+    <div class="demo-note" id="demoNote">
+      <strong>Demo mode</strong> (no backend connected yet). Try:<br>
+      TA — <code>ta1@company.com / ta1@123</code><br>
+      CHD — <code>chd1@company.com / chd1@123</code><br>
+      LEV — <code>lev1@company.com / lev1@123</code><br>
+      Admin — <code>admin@company.com / admin@123</code>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand-mark">S</div><h1>Spinny IMS</h1>
+    <div class="spacer"></div>
+    <div class="userchip">
+      <div class="avatar" id="uAvatar"></div>
+      <div><div id="uName" style="font-weight:700"></div><div class="role" id="uRole"></div></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+  <main id="main"></main>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ====================================================================
+   CONFIG — paste your Google Apps Script Web App URL here after deploy.
+   Leave empty ("") to run in DEMO MODE with sample data.
+==================================================================== */
+const CONFIG = { API_URL: "https://script.google.com/a/macros/spinny.com/s/AKfycbzlChTmh5b6nHs5sCGQ-E9G0bbC3ma8oqC5vaxVO_NOS6ELyGTvdazCm4HIlgADSvXziw/exec" };
+
+/* ---------------- Demo data (used only when API_URL is empty) ---------------- */
+const DEMO = {
+  users: [
+    {User_Email:'admin@company.com',UserName:'Super Admin',User_Role:'Super_Admin',Department:'Management',User_Status:'Active',Password:'admin@123',Phone:'9800000001'},
+    {User_Email:'ta_admin@company.com',UserName:'TA Admin',User_Role:'TA_Admin',Department:'Talent Acquisition',User_Status:'Active',Password:'taadmin@123',Phone:'9800000002'},
+    {User_Email:'ta1@company.com',UserName:'TA Executive 1',User_Role:'TA',Department:'Talent Acquisition',User_Status:'Active',Password:'ta1@123',Phone:'9800000003'},
+    {User_Email:'ta2@company.com',UserName:'TA Executive 2',User_Role:'TA',Department:'Talent Acquisition',User_Status:'Active',Password:'ta2@123',Phone:'9800000006'},
+    {User_Email:'chd1@company.com',UserName:'CHD Interviewer 1',User_Role:'CHD',Department:'Interviewer',User_Status:'Active',Password:'chd1@123',Phone:'9800000004'},
+    {User_Email:'chd2@company.com',UserName:'CHD Interviewer 2',User_Role:'CHD',Department:'Interviewer',User_Status:'Active',Password:'chd2@123',Phone:'9800000007'},
+    {User_Email:'lev1@company.com',UserName:'LEV Interviewer 1',User_Role:'LEV',Department:'Interviewer',User_Status:'Active',Password:'lev1@123',Phone:'9800000005'},
+    {User_Email:'lev2@company.com',UserName:'LEV Interviewer 2',User_Role:'LEV',Department:'Interviewer',User_Status:'Active',Password:'lev2@123',Phone:'9800000008'}
+  ],
+  candidates: [
+    {CandidateID:'CAND_20260402140001',FullName:'Raj Kumar',Phone:'9876543210',Email:'raj@test.com',DOB:'1995-03-15',ExperienceYears:3,CurrentCity:'Delhi',AlternateCity:'Noida',Role_Applied:'SUPPLY EVALUATOR',CurrentEmployer:'AutoCorp India',ResumeURL:'',PhotoURL:'',Source:'AI/MANUAL_SCREENING',Notes:'',CreatedBy:'ta1@company.com',CreatedAt:'2026-04-02 14:43',UpdatedAt:'2026-04-02 14:43',Is_Active:'TRUE'},
+    {CandidateID:'CAND_20260402140002',FullName:'Priya Patel',Phone:'9876543211',Email:'priya@test.com',DOB:'1992-07-22',ExperienceYears:5,CurrentCity:'Mumbai',AlternateCity:'Pune',Role_Applied:'SUPPLY EVALUATOR',CurrentEmployer:'MotorWorks Ltd',ResumeURL:'',PhotoURL:'',Source:'LinkedIn',Notes:'',CreatedBy:'ta1@company.com',CreatedAt:'2026-04-02 14:45',UpdatedAt:'2026-04-02 14:45',Is_Active:'TRUE'}
+  ],
+  tickets: [
+    {TicketID:'TKT_20260402140001',CandidateID:'CAND_20260402140001',Status:'CHD_Scheduled',CHD_Interviewer:'chd1@company.com',CHD_DateTime:'2026-06-13 10:00',CHD_Attempt:1,CHD_Engine:'',CHD_Steering:'',CHD_Electrical:'',CHD_Structure:'',CHD_SoftSkill:'',CHD_GeneralAwareness:'',CHD_Result:'',CHD_Remarks:'',LEV_Interviewer:'',LEV_DateTime:'',LEV_Engine:'',LEV_Steering:'',LEV_Electrical:'',LEV_Structure:'',LEV_SoftSkill:'',LEV_DigitalCompat:'',LEV_DrivingTest:'',LEV_Result:'',LEV_Remarks:'',FinalResult:'',TA_Remarks:'Strong profile',CreatedBy:'ta1@company.com',CreatedAt:'2026-04-02 14:43',UpdatedAt:'2026-04-02 14:43'}
+  ],
+  audit: [
+    {LogID:'LOG_20260402140001',Action:'CREATE_CANDIDATE',PerformedBy:'ta1@company.com',Timestamp:'2026-04-02 14:43',Details:'{"candidateId":"CAND_20260402140001"}'}
+  ]
+};
+
+/* ---------------- State ---------------- */
+let USER = null;
+let DATA = { candidates: [], tickets: [], users: [], audit: [], interviewers: [] };
+let activeTab = '';
+const isDemo = () => !CONFIG.API_URL;
+
+/* ---------------- API layer ---------------- */
+async function api(payload) {
+  if (isDemo()) return demoApi(payload);
+  const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(payload) });
+  return res.json();
+}
+
+function demoApi(p) {
+  const nowStr = () => new Date().toISOString().slice(0,16).replace('T',' ');
+  const mkId = pre => pre + '_' + Date.now() + Math.floor(Math.random()*90+10);
+  const log = (a,by,d) => DEMO.audit.unshift({LogID:mkId('LOG'),Action:a,PerformedBy:by,Timestamp:nowStr(),Details:JSON.stringify(d)});
+  if (p.action==='login'){
+    const u = DEMO.users.find(x=>x.User_Email.toLowerCase()===p.email.toLowerCase() && x.Password===p.password);
+    if(!u) return {ok:false,error:'Invalid email or password'};
+    if(u.User_Status!=='Active') return {ok:false,error:'Account inactive. Contact admin.'};
+    return {ok:true,user:{email:u.User_Email,name:u.UserName,role:u.User_Role,department:u.Department}};
+  }
+  if (p.action==='getData'){
+    let tickets = DEMO.tickets, cands = DEMO.candidates;
+    if(p.role==='CHD'||p.role==='LEV'){
+      tickets = tickets.filter(t=>t.CHD_Interviewer===p.email||t.LEV_Interviewer===p.email);
+      const ids = new Set(tickets.map(t=>t.CandidateID));
+      cands = cands.filter(c=>ids.has(c.CandidateID));
+    }
+    const out = {ok:true,candidates:[...cands],tickets:[...tickets]};
+    if(p.role==='Super_Admin'||p.role==='TA_Admin') out.users=[...DEMO.users];
+    if(p.role==='Super_Admin') out.audit=[...DEMO.audit];
+    if(['TA','TA_Admin','Super_Admin'].includes(p.role)) out.interviewers=DEMO.users.filter(u=>(u.User_Role==='CHD'||u.User_Role==='LEV')&&u.User_Status==='Active').map(u=>({email:u.User_Email,name:u.UserName,role:u.User_Role}));
+    return out;
+  }
+  if (p.action==='addCandidate'){
+    const id = mkId('CAND');
+    DEMO.candidates.push({CandidateID:id,...p.candidate,Role_Applied:'SUPPLY EVALUATOR',CreatedBy:p.by,CreatedAt:nowStr(),UpdatedAt:nowStr(),Is_Active:'TRUE'});
+    log('CREATE_CANDIDATE',p.by,{candidateId:id}); return {ok:true,candidateId:id};
+  }
+  if (p.action==='createTicket'){
+    const id = mkId('TKT');
+    DEMO.tickets.push({TicketID:id,CandidateID:p.candidateId,Status:'CHD_Scheduled',CHD_Interviewer:p.interviewer,CHD_DateTime:p.dateTime,CHD_Attempt:1,CHD_Engine:'',CHD_Steering:'',CHD_Electrical:'',CHD_Structure:'',CHD_SoftSkill:'',CHD_GeneralAwareness:'',CHD_Result:'',CHD_Remarks:'',LEV_Interviewer:'',LEV_DateTime:'',LEV_Engine:'',LEV_Steering:'',LEV_Electrical:'',LEV_Structure:'',LEV_SoftSkill:'',LEV_DigitalCompat:'',LEV_DrivingTest:'',LEV_Result:'',LEV_Remarks:'',FinalResult:'',TA_Remarks:p.remarks||'',CreatedBy:p.by,CreatedAt:nowStr(),UpdatedAt:nowStr()});
+    log('CREATE_TICKET',p.by,{ticketId:id}); return {ok:true,ticketId:id};
+  }
+  const t = DEMO.tickets.find(x=>x.TicketID===p.ticketId);
+  if (p.action==='submitCHD'){
+    Object.assign(t,{CHD_Engine:p.scores.engine,CHD_Steering:p.scores.steering,CHD_Electrical:p.scores.electrical,CHD_Structure:p.scores.structure,CHD_SoftSkill:p.scores.softskill,CHD_GeneralAwareness:p.scores.general,CHD_Result:p.result,CHD_Remarks:p.remarks||'',UpdatedAt:nowStr()});
+    if(p.result==='Pass') t.Status='CHD_Passed';
+    else { t.Status = Number(t.CHD_Attempt)>=2 ? 'Closed' : 'CHD_Failed'; if(t.Status==='Closed') t.FinalResult='Rejected'; }
+    log('SUBMIT_CHD',p.by,{ticketId:p.ticketId,result:p.result}); return {ok:true};
+  }
+  if (p.action==='reassignCHD'){
+    if(Number(t.CHD_Attempt)>=2) return {ok:false,error:'Max 2 CHD attempts reached. Ticket closed.'};
+    Object.assign(t,{CHD_Interviewer:p.interviewer,CHD_DateTime:p.dateTime,CHD_Attempt:Number(t.CHD_Attempt)+1,CHD_Engine:'',CHD_Steering:'',CHD_Electrical:'',CHD_Structure:'',CHD_SoftSkill:'',CHD_GeneralAwareness:'',CHD_Result:'',CHD_Remarks:'',Status:'CHD_Scheduled',TA_Remarks:p.remarks||t.TA_Remarks,UpdatedAt:nowStr()});
+    log('REASSIGN_CHD',p.by,{ticketId:p.ticketId}); return {ok:true};
+  }
+  if (p.action==='scheduleLEV'){
+    Object.assign(t,{LEV_Interviewer:p.interviewer,LEV_DateTime:p.dateTime,Status:'LEV_Scheduled',UpdatedAt:nowStr()});
+    log('SCHEDULE_LEV',p.by,{ticketId:p.ticketId}); return {ok:true};
+  }
+  if (p.action==='submitLEV'){
+    Object.assign(t,{LEV_Engine:p.scores.engine,LEV_Steering:p.scores.steering,LEV_Electrical:p.scores.electrical,LEV_Structure:p.scores.structure,LEV_SoftSkill:p.scores.softskill,LEV_DigitalCompat:p.scores.digital,LEV_DrivingTest:p.drivingTest,LEV_Result:p.result,LEV_Remarks:p.remarks||'',Status:p.result==='Pass'?'Selected':'Rejected',FinalResult:p.result==='Pass'?'Selected':'Rejected',UpdatedAt:nowStr()});
+    log('SUBMIT_LEV',p.by,{ticketId:p.ticketId,result:p.result}); return {ok:true};
+  }
+  if (p.action==='addUser'){
+    DEMO.users.push({User_Email:p.user.email,UserName:p.user.name,User_Role:p.user.role,Department:p.user.department||'',User_Status:'Active',Password:p.user.password,Phone:p.user.phone||'',Created_At:nowStr()});
+    log('ADD_USER',p.by,{email:p.user.email}); return {ok:true};
+  }
+  if (p.action==='setUserStatus'){
+    const u = DEMO.users.find(x=>x.User_Email===p.email); if(u) u.User_Status=p.status;
+    log('SET_USER_STATUS',p.by,{email:p.email,status:p.status}); return {ok:true};
+  }
+  return {ok:false,error:'Unknown action'};
+}
+
+/* ---------------- Auth ---------------- */
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const btn=document.getElementById('loginBtn');
+  const err=document.getElementById('loginErr');
+  err.style.display='none';
+  if(!email||!pass){err.textContent='Enter email and password';err.style.display='block';return;}
+  btn.disabled=true;btn.innerHTML='<span class="loading"></span> Signing in...';
+  try{
+    const res=await api({action:'login',email,password:pass});
+    if(!res.ok){err.textContent=res.error||'Login failed';err.style.display='block';}
+    else{USER=res.user;sessionStorage_set();enterApp();}
+  }catch(e){err.textContent='Connection failed. Check your internet or backend URL.';err.style.display='block';}
+  btn.disabled=false;btn.textContent='Sign in';
+}
+function sessionStorage_set(){ /* session kept in memory only — refresh requires re-login (safe + simple) */ }
+function logout(){USER=null;document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';}
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+if(!isDemo()) document.getElementById('demoNote').style.display='none';
+
+/* ---------------- App entry ---------------- */
+const ROLE_LABEL={Super_Admin:'Super Admin',TA_Admin:'TA Admin',TA:'TA Executive',CHD:'CHD Interviewer',LEV:'LEV Interviewer'};
+async function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('uName').textContent=USER.name;
+  document.getElementById('uRole').textContent=ROLE_LABEL[USER.role]||USER.role;
+  document.getElementById('uAvatar').textContent=USER.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  buildTabs();
+  await refresh();
+}
+function buildTabs(){
+  const t=document.getElementById('tabs');t.innerHTML='';
+  let tabs=[];
+  if(['TA','TA_Admin','Super_Admin'].includes(USER.role)) tabs.push(['dashboard','Dashboard'],['candidates','Candidates'],['tickets','Tickets']);
+  if(USER.role==='CHD'||USER.role==='LEV') tabs.push(['myinterviews','My interviews'],['done','Completed']);
+  if(USER.role==='Super_Admin'||USER.role==='TA_Admin') tabs.push(['users','Users']);
+  if(USER.role==='Super_Admin') tabs.push(['audit','Audit log']);
+  tabs.forEach(([id,label],i)=>{
+    const b=document.createElement('button');b.textContent=label;b.onclick=()=>switchTab(id);b.dataset.tab=id;
+    if(i===0){b.classList.add('active');activeTab=id;}
+    t.appendChild(b);
+  });
+}
+function switchTab(id){
+  activeTab=id;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));
+  render();
+}
+async function refresh(){
+  const res=await api({action:'getData',role:USER.role,email:USER.email});
+  if(res.ok){DATA={candidates:res.candidates||[],tickets:res.tickets||[],users:res.users||[],audit:res.audit||[],interviewers:res.interviewers||[]};}
+  render();
+}
+
+/* ---------------- Helpers ---------------- */
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function cand(id){return DATA.candidates.find(c=>c.CandidateID===id)||{FullName:'(unknown)'};}
+function interviewerName(email){const u=DATA.interviewers.find(i=>i.email===email)||DATA.users.find(u=>u.User_Email===email);return u?(u.name||u.UserName):email;}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function statusBadge(s){
+  const map={CHD_Scheduled:['b-blue','CHD scheduled'],CHD_Passed:['b-amber','CHD passed — schedule LEV'],CHD_Failed:['b-red','CHD failed — reassign'],LEV_Scheduled:['b-pink','LEV scheduled'],Selected:['b-green','Selected ✓'],Rejected:['b-red','Rejected'],Closed:['b-gray','Closed (2 fails)']};
+  const [cls,label]=map[s]||['b-gray',s];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function openModal(html){$('modalBox').innerHTML=`<button class="x" onclick="closeModal()">×</button>`+html;$('modalBg').classList.add('open');}
+function closeModal(){$('modalBg').classList.remove('open');}
+$('modalBg').addEventListener('click',e=>{if(e.target.id==='modalBg')closeModal();});
+
+/* ---------------- Render router ---------------- */
+function render(){
+  const m=$('main');
+  if(activeTab==='dashboard') m.innerHTML=viewDashboard();
+  else if(activeTab==='candidates') m.innerHTML=viewCandidates();
+  else if(activeTab==='tickets') m.innerHTML=viewTickets();
+  else if(activeTab==='myinterviews') m.innerHTML=viewMyInterviews(false);
+  else if(activeTab==='done') m.innerHTML=viewMyInterviews(true);
+  else if(activeTab==='users') m.innerHTML=viewUsers();
+  else if(activeTab==='audit') m.innerHTML=viewAudit();
+}
+
+/* ---------------- Views ---------------- */
+function viewDashboard(){
+  const T=DATA.tickets;
+  const count=s=>T.filter(t=>t.Status===s).length;
+  const stats=[['Total candidates',DATA.candidates.length],['Open tickets',T.filter(t=>!['Selected','Rejected','Closed'].includes(t.Status)).length],['CHD scheduled',count('CHD_Scheduled')],['Awaiting LEV',count('CHD_Passed')],['LEV scheduled',count('LEV_Scheduled')],['Selected',count('Selected')],['Rejected',count('Rejected')+count('Closed')]];
+  let html=`<div class="stat-grid">${stats.map(([l,n])=>`<div class="stat"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('')}</div>`;
+  const need=T.filter(t=>t.Status==='CHD_Passed'||t.Status==='CHD_Failed');
+  html+=`<div class="card"><h2>Needs your action</h2>`;
+  if(!need.length) html+=`<div class="empty">Nothing pending — all caught up 🎉</div>`;
+  else html+=`<div class="table-wrap"><table><tr><th>Candidate</th><th>Status</th><th>Action</th></tr>${need.map(t=>`<tr><td><strong>${esc(cand(t.CandidateID).FullName)}</strong><div class="muted-sm">${t.TicketID}</div></td><td>${statusBadge(t.Status)}</td><td>${t.Status==='CHD_Passed'?`<button class="btn btn-primary btn-sm" onclick="openScheduleLEV('${t.TicketID}')">Schedule LEV</button>`:`<button class="btn btn-ghost btn-sm" onclick="openReassign('${t.TicketID}')">Reassign CHD</button>`}</td></tr>`).join('')}</table></div>`;
+  html+=`</div>`;
+  return html;
+}
+
+function viewCandidates(){
+  let html=`<div class="toolbar"><input placeholder="Search name or phone..." oninput="filterCand(this.value)" id="candSearch"><div style="flex:1"></div><button class="btn btn-primary" onclick="openAddCandidate()">+ Add candidate</button></div>`;
+  html+=`<div class="card"><div class="table-wrap"><table id="candTable"><tr><th>Name</th><th>Phone</th><th>City</th><th>Exp (yrs)</th><th>Employer</th><th>Source</th><th></th></tr>`;
+  if(!DATA.candidates.length) html+=`<tr><td colspan="7"><div class="empty">No candidates yet. Add your first one!</div></td></tr>`;
+  DATA.candidates.slice().reverse().forEach(c=>{
+    const hasTicket=DATA.tickets.some(t=>t.CandidateID===c.CandidateID&&!['Closed','Rejected','Selected'].includes(t.Status));
+    html+=`<tr data-search="${esc((c.FullName+' '+c.Phone).toLowerCase())}"><td><strong>${esc(c.FullName)}</strong><div class="muted-sm">${esc(c.Email||'')}</div></td><td>${esc(c.Phone)}</td><td>${esc(c.CurrentCity)}${c.AlternateCity?` <span class="muted-sm">/ ${esc(c.AlternateCity)}</span>`:''}</td><td>${esc(c.ExperienceYears)}</td><td>${esc(c.CurrentEmployer||'—')}</td><td><span class="badge b-gray">${esc(c.Source||'—')}</span></td><td>${hasTicket?'<span class="muted-sm">In process</span>':`<button class="btn btn-primary btn-sm" onclick="openCreateTicket('${c.CandidateID}')">Schedule CHD</button>`}</td></tr>`;
+  });
+  html+=`</table></div></div>`;
+  return html;
+}
+function filterCand(q){q=q.toLowerCase();document.querySelectorAll('#candTable tr[data-search]').forEach(r=>r.style.display=r.dataset.search.includes(q)?'':'none');}
+
+function viewTickets(){
+  let html=`<div class="card"><h2>All tickets</h2><div class="table-wrap"><table><tr><th>Candidate</th><th>CHD</th><th>LEV</th><th>Status</th><th>Attempt</th><th></th></tr>`;
+  if(!DATA.tickets.length) html+=`<tr><td colspan="6"><div class="empty">No tickets yet.</div></td></tr>`;
+  DATA.tickets.slice().reverse().forEach(t=>{
+    html+=`<tr><td><strong>${esc(cand(t.CandidateID).FullName)}</strong><div class="muted-sm">${t.TicketID}</div></td>
+    <td>${t.CHD_Interviewer?esc(interviewerName(t.CHD_Interviewer))+`<div class="muted-sm">${esc(t.CHD_DateTime)}</div>`:'—'}</td>
+    <td>${t.LEV_Interviewer?esc(interviewerName(t.LEV_Interviewer))+`<div class="muted-sm">${esc(t.LEV_DateTime)}</div>`:'—'}</td>
+    <td>${statusBadge(t.Status)}</td><td>${t.CHD_Attempt}/2</td>
+    <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="openTicketDetail('${t.TicketID}')">View</button>
+    ${t.Status==='CHD_Passed'?`<button class="btn btn-primary btn-sm" onclick="openScheduleLEV('${t.TicketID}')">Schedule LEV</button>`:''}
+    ${t.Status==='CHD_Failed'?`<button class="btn btn-ghost btn-sm" onclick="openReassign('${t.TicketID}')">Reassign</button>`:''}</td></tr>`;
+  });
+  html+=`</table></div></div>`;
+  return html;
+}
+
+function viewMyInterviews(completed){
+  const mine=DATA.tickets.filter(t=>{
+    if(USER.role==='CHD'){ if(t.CHD_Interviewer!==USER.email)return false; return completed? t.CHD_Result!=='' : t.Status==='CHD_Scheduled'; }
+    else { if(t.LEV_Interviewer!==USER.email)return false; return completed? t.LEV_Result!=='' : t.Status==='LEV_Scheduled'; }
+  });
+  let html=`<div class="card"><h2>${completed?'Completed interviews':'Assigned to you'}</h2><div class="table-wrap"><table><tr><th>Candidate</th><th>Scheduled</th><th>${completed?'Result':'Action'}</th></tr>`;
+  if(!mine.length) html+=`<tr><td colspan="3"><div class="empty">${completed?'No completed interviews yet.':'No interviews assigned right now.'}</div></td></tr>`;
+  mine.forEach(t=>{
+    const c=cand(t.CandidateID);
+    const dt=USER.role==='CHD'?t.CHD_DateTime:t.LEV_DateTime;
+    const result=USER.role==='CHD'?t.CHD_Result:t.LEV_Result;
+    html+=`<tr><td><strong>${esc(c.FullName)}</strong><div class="muted-sm">${esc(c.CurrentCity)} · ${esc(c.ExperienceYears)} yrs · ${esc(c.CurrentEmployer||'')}</div></td><td>${esc(dt)}</td><td>${completed?`<span class="badge ${result==='Pass'?'b-green':'b-red'}">${result}</span>`:`<button class="btn btn-primary btn-sm" onclick="openScoreForm('${t.TicketID}')">Start evaluation</button>`}</td></tr>`;
+  });
+  html+=`</table></div></div>`;
+  return html;
+}
+
+function viewUsers(){
+  let html=`<div class="toolbar"><div style="flex:1"></div>${USER.role==='Super_Admin'?'<button class="btn btn-primary" onclick="openAddUser()">+ Add user</button>':''}</div>`;
+  html+=`<div class="card"><div class="table-wrap"><table><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th>${USER.role==='Super_Admin'?'<th></th>':''}</tr>`;
+  DATA.users.forEach(u=>{
+    html+=`<tr><td><strong>${esc(u.UserName)}</strong></td><td>${esc(u.User_Email)}</td><td><span class="badge b-pink">${ROLE_LABEL[u.User_Role]||u.User_Role}</span></td><td><span class="badge ${u.User_Status==='Active'?'b-green':'b-gray'}">${u.User_Status}</span></td>${USER.role==='Super_Admin'?`<td><button class="btn btn-ghost btn-sm" onclick="toggleUser('${u.User_Email}','${u.User_Status==='Active'?'Inactive':'Active'}')">${u.User_Status==='Active'?'Deactivate':'Activate'}</button></td>`:''}</tr>`;
+  });
+  html+=`</table></div></div>`;
+  return html;
+}
+
+function viewAudit(){
+  let html=`<div class="card"><h2>Audit log (latest 200)</h2><div class="table-wrap"><table><tr><th>Time</th><th>Action</th><th>By</th><th>Details</th></tr>`;
+  if(!DATA.audit.length) html+=`<tr><td colspan="4"><div class="empty">No log entries.</div></td></tr>`;
+  DATA.audit.forEach(l=>{html+=`<tr><td style="white-space:nowrap">${esc(l.Timestamp)}</td><td><span class="badge b-blue">${esc(l.Action)}</span></td><td>${esc(l.PerformedBy)}</td><td class="muted-sm">${esc(l.Details)}</td></tr>`;});
+  html+=`</table></div></div>`;
+  return html;
+}
+
+/* ---------------- Modals & actions ---------------- */
+function openAddCandidate(){
+  openModal(`<h2>Add candidate</h2>
+  <div class="grid2">
+    <div class="field"><label>Full name *</label><input id="f_name"></div>
+    <div class="field"><label>Phone *</label><input id="f_phone" maxlength="10" inputmode="numeric"></div>
+    <div class="field"><label>Date of birth</label><input id="f_dob" type="date"></div>
+    <div class="field"><label>Email (optional)</label><input id="f_email" type="email"></div>
+    <div class="field"><label>Current city *</label><input id="f_city"></div>
+    <div class="field"><label>Alternate city</label><input id="f_altcity"></div>
+    <div class="field"><label>Total work experience (yrs) *</label><input id="f_exp" type="number" min="0" step="0.5"></div>
+    <div class="field"><label>Current employer</label><input id="f_emp"></div>
+    <div class="field"><label>Resume URL</label><input id="f_resume" placeholder="https://..."></div>
+    <div class="field"><label>Photo URL</label><input id="f_photo" placeholder="https://..."></div>
+  </div>
+  <div class="field"><label>Source</label><select id="f_source"><option>MANUAL</option><option>AI/MANUAL_SCREENING</option><option>LinkedIn</option><option>Naukri</option><option>Referral</option><option>Walk-in</option></select></div>
+  <div class="field"><label>Notes</label><textarea id="f_notes" rows="2"></textarea></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="saveCandBtn" onclick="saveCandidate()">Save candidate</button></div>`);
+}
+async function saveCandidate(){
+  const name=$('f_name').value.trim(),phone=$('f_phone').value.trim(),city=$('f_city').value.trim(),exp=$('f_exp').value;
+  if(!name||!phone||!city||exp===''){toast('Fill all required (*) fields');return;}
+  if(!/^\d{10}$/.test(phone)){toast('Phone must be 10 digits');return;}
+  const btn=$('saveCandBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> Saving...';
+  const res=await api({action:'addCandidate',by:USER.email,candidate:{FullName:name,Phone:phone,DOB:$('f_dob').value,Email:$('f_email').value.trim(),CurrentCity:city,AlternateCity:$('f_altcity').value.trim(),ExperienceYears:exp,CurrentEmployer:$('f_emp').value.trim(),ResumeURL:$('f_resume').value.trim(),PhotoURL:$('f_photo').value.trim(),Source:$('f_source').value,Notes:$('f_notes').value.trim()}});
+  if(res.ok){closeModal();toast('Candidate added ✓');await refresh();}
+  else{toast(res.error||'Failed to save');btn.disabled=false;btn.textContent='Save candidate';}
+}
+
+function interviewerOptions(role){
+  return DATA.interviewers.filter(i=>i.role===role).map(i=>`<option value="${i.email}">${esc(i.name)} (${i.email})</option>`).join('');
+}
+function openCreateTicket(candId){
+  const c=cand(candId);
+  openModal(`<h2>Schedule CHD round — ${esc(c.FullName)}</h2>
+  <div class="field"><label>CHD interviewer *</label><select id="t_interviewer">${interviewerOptions('CHD')}</select></div>
+  <div class="grid2">
+    <div class="field"><label>Interview date *</label><input id="t_date" type="date"></div>
+    <div class="field"><label>Interview time *</label><input id="t_time" type="time"></div>
+  </div>
+  <div class="field"><label>TA remarks</label><textarea id="t_remarks" rows="2" placeholder="Optional notes for the interviewer"></textarea></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="tktBtn" onclick="saveTicket('${candId}')">Create ticket</button></div>`);
+}
+async function saveTicket(candId){
+  const iv=$('t_interviewer').value,d=$('t_date').value,tm=$('t_time').value;
+  if(!iv||!d||!tm){toast('Select interviewer, date and time');return;}
+  const btn=$('tktBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> Creating...';
+  const res=await api({action:'createTicket',by:USER.email,candidateId:candId,interviewer:iv,dateTime:`${d} ${tm}`,remarks:$('t_remarks').value.trim()});
+  if(res.ok){closeModal();toast('Ticket created ✓ CHD scheduled');await refresh();}
+  else{toast(res.error||'Failed');btn.disabled=false;btn.textContent='Create ticket';}
+}
+
+function openReassign(tid){
+  const t=DATA.tickets.find(x=>x.TicketID===tid);
+  openModal(`<h2>Reassign CHD round</h2>
+  <p class="muted-sm" style="margin-bottom:14px">Attempt ${t.CHD_Attempt} failed. This is the <strong>final attempt</strong> — if failed again, the ticket closes automatically.</p>
+  <div class="field"><label>New CHD interviewer *</label><select id="t_interviewer">${interviewerOptions('CHD')}</select></div>
+  <div class="grid2">
+    <div class="field"><label>Date *</label><input id="t_date" type="date"></div>
+    <div class="field"><label>Time *</label><input id="t_time" type="time"></div>
+  </div>
+  <div class="field"><label>TA remarks</label><textarea id="t_remarks" rows="2">${esc(t.TA_Remarks||'')}</textarea></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="tktBtn" onclick="saveReassign('${tid}')">Reassign</button></div>`);
+}
+async function saveReassign(tid){
+  const iv=$('t_interviewer').value,d=$('t_date').value,tm=$('t_time').value;
+  if(!iv||!d||!tm){toast('Select interviewer, date and time');return;}
+  const btn=$('tktBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> Saving...';
+  const res=await api({action:'reassignCHD',by:USER.email,ticketId:tid,interviewer:iv,dateTime:`${d} ${tm}`,remarks:$('t_remarks').value.trim()});
+  if(res.ok){closeModal();toast('Reassigned ✓ Attempt 2 scheduled');await refresh();}
+  else{toast(res.error||'Failed');btn.disabled=false;btn.textContent='Reassign';}
+}
+
+function openScheduleLEV(tid){
+  const t=DATA.tickets.find(x=>x.TicketID===tid);
+  openModal(`<h2>Schedule LEV round — ${esc(cand(t.CandidateID).FullName)}</h2>
+  <div class="field"><label>LEV interviewer *</label><select id="t_interviewer">${interviewerOptions('LEV')}</select></div>
+  <div class="grid2">
+    <div class="field"><label>Date *</label><input id="t_date" type="date"></div>
+    <div class="field"><label>Time *</label><input id="t_time" type="time"></div>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="tktBtn" onclick="saveLEVSchedule('${tid}')">Schedule LEV</button></div>`);
+}
+async function saveLEVSchedule(tid){
+  const iv=$('t_interviewer').value,d=$('t_date').value,tm=$('t_time').value;
+  if(!iv||!d||!tm){toast('Select interviewer, date and time');return;}
+  const btn=$('tktBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> Scheduling...';
+  const res=await api({action:'scheduleLEV',by:USER.email,ticketId:tid,interviewer:iv,dateTime:`${d} ${tm}`});
+  if(res.ok){closeModal();toast('LEV round scheduled ✓');await refresh();}
+  else{toast(res.error||'Failed');btn.disabled=false;btn.textContent='Schedule LEV';}
+}
+
+/* -------- Scoring forms (CHD & LEV) -------- */
+const CHD_PARAMS=[['engine','Engine & Transmission'],['steering','Steering, Suspension & Brakes'],['electrical','Electrical & SRS'],['structure','Structure'],['softskill','Soft skills'],['general','General awareness']];
+const LEV_PARAMS=[['engine','Engine & Transmission'],['steering','Steering, Suspension & Brakes'],['electrical','Electrical & SRS'],['structure','Structure'],['softskill','Soft skills'],['digital','Digital compatibility']];
+let scoreResult='';let drivingResult='';
+
+function openScoreForm(tid){
+  const t=DATA.tickets.find(x=>x.TicketID===tid);
+  const c=cand(t.CandidateID);
+  const isCHD=USER.role==='CHD';
+  const params=isCHD?CHD_PARAMS:LEV_PARAMS;
+  scoreResult='';drivingResult='';
+  let rows=params.map(([k,l])=>`<div class="score-row"><span>${l}</span><input type="number" min="0" max="15" id="sc_${k}" placeholder="x/15" oninput="calcTotal(${isCHD})"></div>`).join('');
+  openModal(`<h2>${isCHD?'CHD':'LEV'} evaluation — ${esc(c.FullName)}</h2>
+  <div class="detail-grid" style="margin-bottom:16px">
+    <dt>Phone</dt><dd>${esc(c.Phone)}</dd>
+    <dt>City</dt><dd>${esc(c.CurrentCity)}</dd>
+    <dt>Experience</dt><dd>${esc(c.ExperienceYears)} yrs</dd>
+    <dt>Employer</dt><dd>${esc(c.CurrentEmployer||'—')}</dd>
+    ${t.TA_Remarks?`<dt>TA remarks</dt><dd>${esc(t.TA_Remarks)}</dd>`:''}
+  </div>
+  ${rows}
+  <div class="total-bar"><span>Total score</span><span id="scTotal">0 / ${params.length*15}</span></div>
+  ${!isCHD?`<div class="field"><label>Driving test *</label><div class="seg" id="driveSeg"><button onclick="setDrive('Pass',this)">Pass</button><button onclick="setDrive('Fail',this)">Fail</button></div></div>`:''}
+  <div class="field"><label>Final ${isCHD?'CHD':'LEV'} round result *</label><div class="seg" id="resSeg"><button onclick="setResult('Pass',this)">Pass ✓</button><button onclick="setResult('Fail',this)">Fail ✗</button></div></div>
+  <div class="field"><label>Remarks</label><textarea id="sc_remarks" rows="2" placeholder="Interviewer comments"></textarea></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="scBtn" onclick="submitScore('${tid}',${isCHD})">Submit evaluation</button></div>`);
+}
+function calcTotal(isCHD){
+  const params=isCHD?CHD_PARAMS:LEV_PARAMS;
+  let tot=0;params.forEach(([k])=>{tot+=Number($('sc_'+k).value)||0;});
+  $('scTotal').textContent=`${tot} / ${params.length*15}`;
+}
+function setResult(r,btn){scoreResult=r;document.querySelectorAll('#resSeg button').forEach(b=>b.className='');btn.className=r==='Pass'?'sel-pass':'sel-fail';}
+function setDrive(r,btn){drivingResult=r;document.querySelectorAll('#driveSeg button').forEach(b=>b.className='');btn.className=r==='Pass'?'sel-pass':'sel-fail';}
+async function submitScore(tid,isCHD){
+  const params=isCHD?CHD_PARAMS:LEV_PARAMS;
+  const scores={};let bad=false;
+  params.forEach(([k])=>{const v=$('sc_'+k).value;if(v===''||Number(v)<0||Number(v)>15)bad=true;scores[k]=Number(v);});
+  if(bad){toast('Enter all scores (0–15)');return;}
+  if(!scoreResult){toast('Select Pass or Fail');return;}
+  if(!isCHD&&!drivingResult){toast('Select driving test result');return;}
+  const btn=$('scBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> Submitting...';
+  const payload=isCHD
+    ?{action:'submitCHD',by:USER.email,ticketId:tid,scores,result:scoreResult,remarks:$('sc_remarks').value.trim()}
+    :{action:'submitLEV',by:USER.email,ticketId:tid,scores,result:scoreResult,drivingTest:drivingResult,remarks:$('sc_remarks').value.trim()};
+  const res=await api(payload);
+  if(res.ok){closeModal();toast('Evaluation submitted ✓');await refresh();}
+  else{toast(res.error||'Failed');btn.disabled=false;btn.textContent='Submit evaluation';}
+}
+
+/* -------- Ticket detail -------- */
+function openTicketDetail(tid){
+  const t=DATA.tickets.find(x=>x.TicketID===tid);
+  const c=cand(t.CandidateID);
+  const chdScores=t.CHD_Result?`<div class="detail-grid" style="margin:8px 0 14px">
+    <dt>Engine & Trans.</dt><dd>${t.CHD_Engine}/15</dd><dt>Steering/Susp/Brakes</dt><dd>${t.CHD_Steering}/15</dd>
+    <dt>Electrical & SRS</dt><dd>${t.CHD_Electrical}/15</dd><dt>Structure</dt><dd>${t.CHD_Structure}/15</dd>
+    <dt>Soft skills</dt><dd>${t.CHD_SoftSkill}/15</dd><dt>General awareness</dt><dd>${t.CHD_GeneralAwareness}/15</dd>
+    <dt>Result</dt><dd><span class="badge ${t.CHD_Result==='Pass'?'b-green':'b-red'}">${t.CHD_Result}</span></dd>
+    ${t.CHD_Remarks?`<dt>Remarks</dt><dd>${esc(t.CHD_Remarks)}</dd>`:''}</div>`:'<p class="muted-sm" style="margin-bottom:14px">Not evaluated yet.</p>';
+  const levScores=t.LEV_Result?`<div class="detail-grid" style="margin:8px 0 14px">
+    <dt>Engine & Trans.</dt><dd>${t.LEV_Engine}/15</dd><dt>Steering/Susp/Brakes</dt><dd>${t.LEV_Steering}/15</dd>
+    <dt>Electrical & SRS</dt><dd>${t.LEV_Electrical}/15</dd><dt>Structure</dt><dd>${t.LEV_Structure}/15</dd>
+    <dt>Soft skills</dt><dd>${t.LEV_SoftSkill}/15</dd><dt>Digital compat.</dt><dd>${t.LEV_DigitalCompat}/15</dd>
+    <dt>Driving test</dt><dd><span class="badge ${t.LEV_DrivingTest==='Pass'?'b-green':'b-red'}">${t.LEV_DrivingTest}</span></dd>
+    <dt>Result</dt><dd><span class="badge ${t.LEV_Result==='Pass'?'b-green':'b-red'}">${t.LEV_Result}</span></dd>
+    ${t.LEV_Remarks?`<dt>Remarks</dt><dd>${esc(t.LEV_Remarks)}</dd>`:''}</div>`:(t.LEV_Interviewer?'<p class="muted-sm" style="margin-bottom:14px">Scheduled, awaiting evaluation.</p>':'<p class="muted-sm" style="margin-bottom:14px">Not scheduled yet.</p>');
+  openModal(`<h2>${esc(c.FullName)} — ${t.TicketID}</h2>
+  <p style="margin-bottom:14px">${statusBadge(t.Status)} <span class="muted-sm">· CHD attempt ${t.CHD_Attempt}/2 · Created by ${esc(t.CreatedBy)}</span></p>
+  <h2 style="font-size:15px">CHD round ${t.CHD_Interviewer?`<span class="muted-sm" style="font-weight:400">— ${esc(interviewerName(t.CHD_Interviewer))}, ${esc(t.CHD_DateTime)}</span>`:''}</h2>
+  ${chdScores}
+  <h2 style="font-size:15px">LEV round ${t.LEV_Interviewer?`<span class="muted-sm" style="font-weight:400">— ${esc(interviewerName(t.LEV_Interviewer))}, ${esc(t.LEV_DateTime)}</span>`:''}</h2>
+  ${levScores}
+  ${t.FinalResult?`<div class="total-bar"><span>Final result</span><span class="badge ${t.FinalResult==='Selected'?'b-green':'b-red'}" style="font-size:14px">${t.FinalResult}</span></div>`:''}
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>`);
+}
+
+/* -------- User management -------- */
+function openAddUser(){
+  openModal(`<h2>Add user</h2>
+  <div class="grid2">
+    <div class="field"><label>Full name *</label><input id="u_name"></div>
+    <div class="field"><label>Email *</label><input id="u_email" type="email"></div>
+    <div class="field"><label>Role *</label><select id="u_role"><option value="TA">TA Executive</option><option value="TA_Admin">TA Admin</option><option value="CHD">CHD Interviewer</option><option value="LEV">LEV Interviewer</option><option value="Super_Admin">Super Admin</option></select></div>
+    <div class="field"><label>Phone</label><input id="u_phone" maxlength="10"></div>
+    <div class="field"><label>Department</label><input id="u_dept" placeholder="e.g. Talent Acquisition"></div>
+    <div class="field"><label>Password *</label><input id="u_pass"></div>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="uBtn" onclick="saveUser()">Add user</button></div>`);
+}
+async function saveUser(){
+  const name=$('u_name').value.trim(),email=$('u_email').value.trim(),pass=$('u_pass').value;
+  if(!name||!email||!pass){toast('Fill all required fields');return;}
+  const btn=$('uBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> Adding...';
+  const res=await api({action:'addUser',by:USER.email,user:{name,email,role:$('u_role').value,phone:$('u_phone').value.trim(),department:$('u_dept').value.trim(),password:pass}});
+  if(res.ok){closeModal();toast('User added ✓');await refresh();}
+  else{toast(res.error||'Failed');btn.disabled=false;btn.textContent='Add user';}
+}
+async function toggleUser(email,status){
+  const res=await api({action:'setUserStatus',by:USER.email,email,status});
+  if(res.ok){toast(`User ${status==='Active'?'activated':'deactivated'} ✓`);await refresh();}
+  else toast(res.error||'Failed');
+}
+</script>
+</body>
+</html>
